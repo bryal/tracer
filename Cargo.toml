@@ -1,0 +1,11 @@
+[package]
+name = "tracer"
+version = "0.1.0"
+authors = ["Johan Johansson <96.bryal@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+vulkano = "*"
+vulkano-win = "*"
+vulkano-shaders = "*"
+winit = "*"

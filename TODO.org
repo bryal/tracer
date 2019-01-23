@@ -7,17 +7,15 @@ gpu pathtracer.
 https://www.fasterthan.life/blog/2017/7/11/i-am-graphics-and-so-can-you-part-2-intuition
 http://vulkano.rs/
 
-** TODO Render a triangle
+** DONE Render a triangle
 
-** NEXT Render a cube with camera movement
-
+** TODO Render a triangle w basic raytracing
+   Use Embree and implement a basic raytracer.
+   Direct illumination, basic materials, and no bounces.
 ** NEXT Load an .obj file and render all triangles of an object
 
 ** NEXT Load a .mtl file and render an object with basic material
    Only consider diffuse color to start with.
-
-** NEXT Use Embree and implement a basic raytracer
-   Direct illumination, basic materials, and no bounces.
 
 ** NEXT Implemente more complete pathtracer
    Support reflection, refraction, and transmission. Dielectric and metallic materials.
