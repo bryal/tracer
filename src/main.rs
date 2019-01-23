@@ -30,14 +30,14 @@ use std::sync::Arc;
 struct Vertex {
     pos: [f32; 2],
 }
-impl_vertex!(Vertex, position);
+impl_vertex!(Vertex, pos);
 
 mod vert {
     vulkano_shaders::shader! { ty: "vertex", src: "
 #version 450
-layout(location = 0) in vec2 position;
+layout(location = 0) in vec2 pos;
 void main() {
-    gl_Position = vec4(position, 0.0, 1.0);
+    gl_Position = vec4(pos, 0.0, 1.0);
 }
     " }
 }
@@ -74,19 +74,6 @@ fn main() {
 
     // Initialization finished!
 
-    // Create a buffer that will store the shape of our triangle.
-    let vertex_buffer = CpuAccessibleBuffer::from_iter(
-        device.clone(),
-        BufferUsage::all(),
-        [
-            Vertex { position: [-0.5, -0.25] },
-            Vertex { position: [0.0, 0.5] },
-            Vertex { position: [0.25, -0.1] },
-        ]
-        .iter()
-        .cloned(),
-    )
-    .unwrap();
     // The swapchain may become invalid for various reason. We may have to recreate it.
     let mut recreate_swapchain = false;
     // Submitting a command to the GPU produces a `GpuFuture`, which
@@ -133,6 +120,7 @@ fn main() {
                 Err(err) => panic!("{:?}", err),
             };
         let clear_values = vec![CLEAR.into()];
+        let vertex_buffer = fullscreen_quad(&device);
         // Build a command buffer. Holds the list of commands that are going to be executed.
         //
         // Note that we have to pass a queue family when we create the command buffer. The command
@@ -360,7 +348,7 @@ where
     let pipeline = GraphicsPipeline::start()
         .vertex_input_single_buffer::<Vertex>()
         .vertex_shader(vert.main_entry_point(), ())
-        .triangle_list()
+        .triangle_strip()
         // Use a resizable viewport set to draw over the entire window
         .viewports_dynamic_scissors_irrelevant(1)
         .fragment_shader(frag.main_entry_point(), ())
@@ -396,4 +384,20 @@ fn window_size_dependent_setup(
             ) as Arc<FramebufferAbstract + Send + Sync>
         })
         .collect::<Vec<_>>()
+}
+
+fn fullscreen_quad(device: &Arc<Device>) -> Arc<CpuAccessibleBuffer<[Vertex]>> {
+    CpuAccessibleBuffer::from_iter(
+        device.clone(),
+        BufferUsage::all(),
+        [
+            Vertex { pos: [-1.0, -1.0] },
+            Vertex { pos: [1.0, -1.0] },
+            Vertex { pos: [-1.0, 1.0] },
+            Vertex { pos: [1.0, 1.0] },
+        ]
+        .iter()
+        .cloned(),
+    )
+    .unwrap()
 }
