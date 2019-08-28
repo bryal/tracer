@@ -68,7 +68,11 @@ fn main() {
     let (vert, frag) = load_shaders(&device);
     let pipeline = create_pipeline(vert, frag, &render_pass, &device);
     // Dynamic viewports allow us to recreate just the viewport when the window is resized
-    let mut dynamic_state = DynamicState { line_width: None, viewports: None, scissors: None };
+    let mut dynamic_state = DynamicState {
+        line_width: None,
+        viewports: None,
+        scissors: None,
+    };
     let mut framebuffers =
         window_size_dependent_setup(&images, render_pass.clone(), &mut dynamic_state);
 
@@ -136,7 +140,13 @@ fn main() {
                 //
                 // The last two parameters contain the list of resources to pass to the shaders.
                 // Since we used an `EmptyPipeline` object, the objects have to be `()`.
-                .draw(pipeline.clone(), &dynamic_state, vertex_buffer.clone(), (), ())
+                .draw(
+                    pipeline.clone(),
+                    &dynamic_state,
+                    vertex_buffer.clone(),
+                    (),
+                    (),
+                )
                 .unwrap()
                 // We leave the render pass by calling `draw_end`. Note that if we had multiple
                 // subpasses we could have called `next_inline` (or `next_secondary`) to jump to the
@@ -169,8 +179,14 @@ fn main() {
         // Handle the window events
         let mut done = false;
         window_events_loop.poll_events(|ev| match ev {
-            Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => done = true,
-            Event::WindowEvent { event: WindowEvent::Resized(_), .. } => recreate_swapchain = true,
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => done = true,
+            Event::WindowEvent {
+                event: WindowEvent::Resized(_),
+                ..
+            } => recreate_swapchain = true,
             _ => (),
         });
         if done {
@@ -195,7 +211,11 @@ fn get_physical_device<'a>(instance: &'a Arc<Instance>) -> PhysicalDevice<'a> {
     // TODO: Filter out unsupported devices.
     // TODO: Let user choose device
     let physical = PhysicalDevice::from_index(&instance, 0).expect("Device 0 out of range");
-    println!("Using device: {} (type: {:?})", physical.name(), physical.ty());
+    println!(
+        "Using device: {} (type: {:?})",
+        physical.name(),
+        physical.ty()
+    );
     physical
 }
 
@@ -228,15 +248,22 @@ fn initialize_device(
     // manually at device creation. In this example the only thing we
     // are going to need is the `khr_swapchain` extension that allows
     // us to draw to a window.
-    let device_ext = DeviceExtensions { khr_swapchain: true, ..DeviceExtensions::none() };
+    let device_ext = DeviceExtensions {
+        khr_swapchain: true,
+        ..DeviceExtensions::none()
+    };
     // The floating-point represents the priority of the queue between
     // 0.0 and 1.0. The priority of the queue is a hint to the
     // implementation about how much it should prioritize queues
     // between one another.
     let queue_families = iter::once((queue_family, 0.5));
-    let (device, mut queues) =
-        Device::new(physical, physical.supported_features(), &device_ext, queue_families)
-            .expect("Failed to initialize device");
+    let (device, mut queues) = Device::new(
+        physical,
+        physical.supported_features(),
+        &device_ext,
+        queue_families,
+    )
+    .expect("Failed to initialize device");
     // Since we can request multiple queues, the `queues` variable is in fact an iterator. In this
     // example we use only one queue, so we just retrieve the first and only element of the
     // iterator and throw it away.
