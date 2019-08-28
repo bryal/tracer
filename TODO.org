@@ -1,4 +1,4 @@
-* Tracer
+#+TITLE: Tracer TODO
 
 May be a good idea to start with vulkan, as gfx-rs seems kindof goofy
 right now to me, and vulkan may prove very useful when implementing a
@@ -7,34 +7,25 @@ gpu pathtracer.
 https://www.fasterthan.life/blog/2017/7/11/i-am-graphics-and-so-can-you-part-2-intuition
 http://vulkano.rs/
 
-** DONE Render a triangle
-
-** TODO Render a triangle w basic raytracing
-   Use Embree and implement a basic raytracer.
+* DONE Render a triangle
+* NEXT Render a triangle w basic raytracing
+   Use Embree(?) and implement a basic raytracer.
    Direct illumination, basic materials, and no bounces.
-** NEXT Load an .obj file and render all triangles of an object
-
-** NEXT Load a .mtl file and render an object with basic material
+* INACTIVE Load an .obj file and render all triangles of an object
+* INACTIVE Load a .mtl file and render an object with basic material
    Only consider diffuse color to start with.
-
-** NEXT Implemente more complete pathtracer
+* INACTIVE Implemente more complete pathtracer
    Support reflection, refraction, and transmission. Dielectric and metallic materials.
 
    Should at this point be able to render something like this
    http://www.kevinbeason.com/smallpt/result640.jpg
    or this
    http://2.bp.blogspot.com/-r2cO8r5o1ic/UHdljQvlErI/AAAAAAAAL-o/FCbQ35Z7vlE/s1600/TestScene6_3300.bmp
-
-** NEXT Handle light being composed of different colors
+* INACTIVE Handle light being composed of different colors
    Should be able to recreate Chromatic Abberation when transmitting through a glass sphere, for example.
-
-** NEXT Light attenuation. Colored transmitting mediums. Sunglasses, colored glass, colored plastic.
-
-** NEXT More cool pathtracing features. Caustics?
-
-** NEXT GPU pathtracing. Use vulkan?
-
-** NEXT Real-time pathtracing
+* INACTIVE Light attenuation. Colored transmitting mediums. Sunglasses, colored glass, colored plastic.
+* INACTIVE More cool pathtracing features. Caustics?
+* INACTIVE GPU pathtracing. Use vulkan?
+* INACTIVE Real-time pathtracing
    Reprojection? Consider other hacks for making it all faster.
-
-** NEXT Real-time pathtraced game
+* INACTIVE Real-time pathtraced game
