@@ -2,6 +2,7 @@ use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
 use vulkano::command_buffer::{AutoCommandBufferBuilder, DynamicState};
 use vulkano::descriptor::PipelineLayoutAbstract;
 use vulkano::device::{Device, DeviceExtensions, Queue};
+use vulkano::format::ClearValue;
 use vulkano::framebuffer::{Framebuffer, FramebufferAbstract, RenderPassAbstract, Subpass};
 use vulkano::image::SwapchainImage;
 use vulkano::instance::{Instance, PhysicalDevice, QueueFamily};
@@ -51,8 +52,6 @@ void main() {
         "
     }
 }
-
-const CLEAR: [f32; 3] = [0.1, 0.4, 0.8];
 
 pub fn display<F>(f: F)
 where
@@ -126,8 +125,9 @@ where
                 }
                 Err(err) => panic!("{:?}", err),
             };
-        let clear_values = vec![CLEAR.into()];
         let vertex_buffer = fullscreen_quad(&device);
+        // We're rendering a full-screen quad every frame anyways, so clearing is pointless.
+        let clear_values = vec![ClearValue::None];
         // Build a command buffer. Holds the list of commands that are going to be executed.
         //
         // Note that we have to pass a queue family when we create the command buffer. The command
@@ -320,9 +320,10 @@ fn create_render_pass(
         attachments: {
             // `color` is a custom name we give to the first and only attachment.
             color: {
-                // `load: Clear` means that we ask the GPU to clear the content of this
-                // attachment at the start of the drawing.
-                load: Clear,
+                // `load: Clear` means that we ask the GPU to clear the content of this attachment
+                // at the start of the drawing. `DontCare` means we'll draw over it anyways, so do
+                // whatever.
+                load: DontCare,
                 // `store: Store` means that we ask the GPU to store the output of the draw
                 // in the actual image. We could also ask it to discard the result.
                 store: Store,
