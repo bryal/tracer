@@ -1,5 +1,8 @@
-out vec4 f_color;
+in vec2 uv;
+out vec4 frag;
+
+uniform sampler2D tex;
 
 void main() {
-    f_color = vec4(0.6, 0.0, 1.0, 1.0);
+    frag = texture(tex, uv);
 }
