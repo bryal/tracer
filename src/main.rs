@@ -79,7 +79,8 @@ fn main() {
     }
     // Something is not always dropping correctly, probably an Arc somewhere, so
     // we do this to force exit.
-    panic!("\n\nThank you for playing Wing Commander!\n\n")
+    println!("\nThank you for playing Wing Commander!");
+    std::process::abort();
 }
 
 fn fullscreen_quad(surface: &mut GlfwSurface) -> Tess {
