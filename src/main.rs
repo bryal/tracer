@@ -84,27 +84,14 @@ fn main() {
 
 fn fullscreen_quad(surface: &mut GlfwSurface) -> Tess {
     let vertices: [Vertex; 4] = [
-        // First triangle – an RGB one.
-        Vertex::new(
-            VertexPosition::new([-1.0, -1.0]),
-            VertexColor::new([0, 255, 0]),
-        ),
-        Vertex::new(
-            VertexPosition::new([1.0, -1.0]),
-            VertexColor::new([0, 0, 255]),
-        ),
-        Vertex::new(
-            VertexPosition::new([-1.0, 1.]),
-            VertexColor::new([255, 0, 0]),
-        ),
-        Vertex::new(
-            VertexPosition::new([1.0, 1.0]),
-            VertexColor::new([255, 51, 255]),
-        ),
+        Vertex::new(VertexPosition::new([-1.0, -1.0])),
+        Vertex::new(VertexPosition::new([1.0, -1.0])),
+        Vertex::new(VertexPosition::new([1.0, 1.0])),
+        Vertex::new(VertexPosition::new([-1.0, 1.0])),
     ];
     TessBuilder::new(surface)
         .add_vertices(vertices)
-        .set_mode(Mode::TriangleStrip)
+        .set_mode(Mode::TriangleFan)
         .build()
         .unwrap()
 }
