@@ -5,7 +5,6 @@ authors = ["Johan Johansson <96.bryal@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-vulkano = "*"
-vulkano-win = "*"
-vulkano-shaders = "*"
-winit = "*"
+luminance = "0.37"
+luminance-derive = "0.5"
+luminance-glfw = "0.11"
