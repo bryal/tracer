@@ -8,12 +8,9 @@ https://www.fasterthan.life/blog/2017/7/11/i-am-graphics-and-so-can-you-part-2-i
 http://vulkano.rs/
 
 * DONE Render a triangle
-* NEXT Render a triangle w basic raytracing
-   Use Embree(?) and implement a basic raytracer.
-   Direct illumination, basic materials, and no bounces.
-* INACTIVE Load an .obj file and render all triangles of an object
-* INACTIVE Load a .mtl file and render an object with basic material
-   Only consider diffuse color to start with.
+* NEXT Naïve raytracer
+   Direct illumination, basic materials, no bounces, no acceleration
+   structure.
 * INACTIVE Implemente more complete pathtracer
    Support reflection, refraction, and transmission. Dielectric and metallic materials.
 
@@ -21,11 +18,23 @@ http://vulkano.rs/
    http://www.kevinbeason.com/smallpt/result640.jpg
    or this
    http://2.bp.blogspot.com/-r2cO8r5o1ic/UHdljQvlErI/AAAAAAAAL-o/FCbQ35Z7vlE/s1600/TestScene6_3300.bmp
+* INACTIVE Basic BVH
+  Naïve implementation from slides or wiki or whatever.
+* INACTIVE LBVH
+  From Karras (2012)? Even though that one is really for the GPU.
+* INACTIVE SBVH / SAH
+* INACTIVE https://www.researchgate.net/publication/319877007_Parallel_Spatial_Splits_in_Bounding_Volume_Hierarchies
+* INACTIVE Karras (2013) BVH
+* INACTIVE https://www.youtube.com/watch?v=cANCbn8D7lw
+* INACTIVE http://www.sci.utah.edu/~wald/Publications/
+* INACTIVE GPU pathtracing and BVH construction
+  Compute shader vs GPGPU? OpenCL, Vulkan compute shader, OpenGL compute shader, Radeon Rays.
 * INACTIVE Handle light being composed of different colors
    Should be able to recreate Chromatic Abberation when transmitting through a glass sphere, for example.
 * INACTIVE Light attenuation. Colored transmitting mediums. Sunglasses, colored glass, colored plastic.
 * INACTIVE More cool pathtracing features. Caustics?
-* INACTIVE GPU pathtracing. Use vulkan?
+* INACTIVE Load an .obj file and render all triangles of an object
+* INACTIVE Load a .mtl file and render an object with basic material
+   Only consider diffuse color to start with
 * INACTIVE Real-time pathtracing
    Reprojection? Consider other hacks for making it all faster.
-* INACTIVE Real-time pathtraced game
