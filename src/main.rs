@@ -1,3 +1,5 @@
+mod geom;
+mod intersect;
 mod trace;
 
 use luminance::context::GraphicsContext as _;
@@ -13,9 +15,10 @@ use luminance_glfw::{
 };
 use std::time;
 
+use geom::*;
 use trace::*;
 
-const SUBSAMPLING: u32 = 1;
+const SUBSAMPLING: u32 = 8;
 
 const VERT_SHADER_SRC: &'static str = include_str!("vert.glsl");
 const FRAG_SHADER_SRC: &'static str = include_str!("frag.glsl");
@@ -64,6 +67,7 @@ fn main() {
     let mut t = time::Instant::now();
     let mut tf = 0.0;
     let mut nf = 0;
+    let t0 = time::Instant::now();
     'app: loop {
         for event in surface.poll_events() {
             match event {
@@ -82,7 +86,8 @@ fn main() {
             resize = false;
         }
         let clear = [ERR_COLOR_F.0, ERR_COLOR_F.1, ERR_COLOR_F.2, 1.0];
-        let tex = trace_texture(&mut tracer, &mut surface);
+        let scene = build_scene(t0);
+        let tex = trace_texture(&mut tracer, &mut surface, &scene);
         surface.pipeline_builder().pipeline(
             &back_buffer,
             clear,
@@ -131,10 +136,11 @@ fn fullscreen_quad(surface: &mut GlfwSurface) -> Tess {
 fn trace_texture(
     tracer: &mut Tracer,
     surface: &mut GlfwSurface,
+    scene: &Scene,
 ) -> Texture<texture::Flat, Dim2, NormRGB8UI> {
     let [sw, sh] = surface.size();
     let dims = [sw / SUBSAMPLING, sh / SUBSAMPLING];
-    let pixels = tracer.trace_frame(dims);
+    let pixels = tracer.trace_frame(dims, scene);
     let n_mipmaps = 0;
     let sampler = texture::Sampler {
         min_filter: texture::MinFilter::Nearest,

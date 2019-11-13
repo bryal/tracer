@@ -10,6 +10,7 @@ luminance-derive = "0.5"
 luminance-glfw = "0.11"
 nalgebra-glm = "0.5"
 rayon = "1.2"
+noise = "0.6"
 
 [profile.release]
 debug = true
