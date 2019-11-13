@@ -1,4 +1,4 @@
-use std::time;
+use nalgebra_glm::{vec2, vec3, U8Vec3, Vec2, Vec3};
 
 type Pixel = (u8, u8, u8);
 
@@ -10,16 +10,12 @@ pub const ERR_COLOR: Pixel = (
 );
 
 pub struct Tracer {
-    t0: time::Instant,
     pixel_buf: Vec<Pixel>,
 }
 
 impl Tracer {
     pub fn new() -> Self {
-        Tracer {
-            t0: time::Instant::now(),
-            pixel_buf: vec![],
-        }
+        Tracer { pixel_buf: vec![] }
     }
 
     pub fn trace_frame(&mut self, [w, h]: [u32; 2]) -> &[Pixel] {
@@ -27,13 +23,8 @@ impl Tracer {
         self.resize_pixel_buf(w, h);
         for y in 0..h {
             for x in 0..w {
-                let uv = (x as f32 / w as f32, y as f32 / h as f32);
-                let r = trace(uv, self.t0);
-                self.pixel_buf[y * w + x] = (
-                    (r[0] * 255.0) as u8,
-                    (r[1] * 255.0) as u8,
-                    (r[2] * 255.0) as u8,
-                );
+                let uv = vec2(x as f32 / w as f32, y as f32 / h as f32);
+                self.pixel_buf[y * w + x] = to_triple(to_u8vec3(trace(uv)));
             }
         }
         &self.pixel_buf
@@ -49,11 +40,18 @@ impl Tracer {
     }
 }
 
-fn trace((_u, _v): (f32, f32), t0: time::Instant) -> [f32; 3] {
-    let t = t0.elapsed().as_secs_f64();
-    let x = t * 4.0;
-    let r = x.sin() * 0.5 + 0.5;
-    let g = (x * 1.3).sin() * 0.5 + 0.5;
-    let b = (x * 1.7).sin() * 0.5 + 0.5;
-    [r as f32, g as f32, b as f32]
+fn trace(uv: Vec2) -> Vec3 {
+    let r = uv.x;
+    let g = (uv.x * 3.7 + uv.y * 5.1).sin() * 0.5 + 0.5;
+    let b = 1.0 - uv.y;
+    vec3(r, g, b)
+}
+
+fn to_triple<T, V: Into<[T; 3]>>(v: V) -> (T, T, T) {
+    let [x, y, z] = v.into();
+    (x, y, z)
+}
+
+fn to_u8vec3(v: Vec3) -> U8Vec3 {
+    v.map(|x| (x * 255.0) as u8)
 }
