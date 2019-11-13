@@ -1,19 +1,20 @@
 mod trace;
 
-use luminance::blending::{Equation, Factor};
 use luminance::context::GraphicsContext as _;
 use luminance::pipeline::BoundTexture;
 use luminance::pixel::{NormRGB8UI, NormUnsigned};
 use luminance::render_state::RenderState;
 use luminance::shader::program::{Program, Uniform};
 use luminance::tess::{Mode, Tess, TessBuilder};
-use luminance::texture::{Dim2, Flat, GenMipmaps, Sampler, Texture};
+use luminance::texture::{self, Dim2, Texture};
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::{
     Action, GlfwSurface, Key, Surface, WindowDim, WindowEvent, WindowOpt,
 };
 
 use trace::*;
+
+const SUBSAMPLING: u32 = 1;
 
 const VERT_SHADER_SRC: &'static str = include_str!("vert.glsl");
 const FRAG_SHADER_SRC: &'static str = include_str!("frag.glsl");
@@ -33,7 +34,9 @@ struct Vertex {
 
 #[derive(UniformInterface)]
 struct ShaderInterface {
-    tex: Uniform<&'static BoundTexture<'static, Flat, Dim2, NormUnsigned>>,
+    tex: Uniform<
+        &'static BoundTexture<'static, texture::Flat, Dim2, NormUnsigned>,
+    >,
 }
 
 fn main() {
@@ -53,11 +56,7 @@ fn main() {
     .expect("program creation")
     .ignore_warnings();
     let tess = fullscreen_quad(&mut surface);
-    let render_st = RenderState::default().set_blending((
-        Equation::Additive,
-        Factor::SrcAlpha,
-        Factor::Zero,
-    ));
+    let render_st = RenderState::default();
     let mut back_buffer = surface.back_buffer().unwrap();
     let mut resize = false;
     let mut tracer = Tracer::new();
@@ -118,14 +117,18 @@ fn fullscreen_quad(surface: &mut GlfwSurface) -> Tess {
 fn trace_texture(
     tracer: &mut Tracer,
     surface: &mut GlfwSurface,
-) -> Texture<Flat, Dim2, NormRGB8UI> {
+) -> Texture<texture::Flat, Dim2, NormRGB8UI> {
     let [sw, sh] = surface.size();
-    let sub = 4;
-    let dims = [sw / sub, sh / sub];
+    let dims = [sw / SUBSAMPLING, sh / SUBSAMPLING];
     let pixels = tracer.trace_frame(dims);
     let n_mipmaps = 0;
-    let tex = Texture::new(surface, dims, n_mipmaps, Sampler::default())
+    let sampler = texture::Sampler {
+        min_filter: texture::MinFilter::Nearest,
+        mag_filter: texture::MagFilter::Nearest,
+        ..Default::default()
+    };
+    let tex = Texture::new(surface, dims, n_mipmaps, sampler)
         .expect("luminance texture creation");
-    tex.upload(GenMipmaps::No, pixels).unwrap();
+    tex.upload(texture::GenMipmaps::No, pixels).unwrap();
     tex
 }

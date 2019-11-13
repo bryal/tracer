@@ -79,7 +79,7 @@ impl Tracer {
                         .normalize(),
                 };
                 self.pixel_buf[y * w + x] =
-                    to_u8_triple(trace(primary_ray, &scene));
+                    to_u8_triple(trace(&primary_ray, &scene));
             }
         }
         &self.pixel_buf
@@ -95,11 +95,8 @@ impl Tracer {
     }
 }
 
-fn trace(ray: Ray, scene: &[Sphere]) -> Vec3 {
-    let hits = scene.iter().flat_map(|obj| obj.intersect(&ray));
-    if let Some(hit) =
-        hits.min_by(|h1, h2| h1.t.partial_cmp(&h2.t).expect("sorting hits"))
-    {
+fn trace(ray: &Ray, scene: &[Sphere]) -> Vec3 {
+    if let Some(hit) = closest_hit(ray, scene) {
         // let hit_pos = ray.origin + hit.t * ray.dir;
         let from_sun = vec3(-6.0, -10.0, 4.0).normalize();
         let brightness = hit.normal.dot(&-from_sun).max(0.0);
@@ -107,6 +104,17 @@ fn trace(ray: Ray, scene: &[Sphere]) -> Vec3 {
     } else {
         background_color()
     }
+}
+
+fn closest_hit(ray: &Ray, scene: &[Sphere]) -> Option<Hit> {
+    scene
+        .iter()
+        .flat_map(|obj| obj.intersect(ray))
+        .min_by(|h1, h2| h1.t.partial_cmp(&h2.t).expect("sorting hits"))
+}
+
+fn any_hit(ray: &Ray, scene: &[Sphere]) -> Option<Hit> {
+    scene.iter().flat_map(|obj| obj.intersect(ray)).next()
 }
 
 struct Ray {
