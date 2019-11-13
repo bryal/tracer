@@ -1,4 +1,5 @@
 use nalgebra_glm::{vec3, Vec3};
+use rayon::prelude::*;
 use std::time;
 
 type Pixel = (u8, u8, u8);
@@ -69,19 +70,23 @@ impl Tracer {
                 color: vec3(0.3, 0.3, 0.3),
             },
         ];
-        for y in 0..h {
-            for x in 0..w {
-                let u = x as f32 / w as f32;
-                let v = y as f32 / h as f32;
-                let primary_ray = Ray {
-                    origin: cam_pos,
-                    dir: (screen_origin + u * screen_x_dir + v * screen_y_dir)
-                        .normalize(),
-                };
-                self.pixel_buf[y * w + x] =
-                    to_u8_triple(trace(&primary_ray, &scene));
-            }
-        }
+        self.pixel_buf
+            .par_chunks_mut(w)
+            .enumerate()
+            .for_each(|(y, buf)| {
+                for x in 0..w {
+                    let u = x as f32 / w as f32;
+                    let v = y as f32 / h as f32;
+                    let primary_ray = Ray {
+                        origin: cam_pos,
+                        dir: (screen_origin
+                            + u * screen_x_dir
+                            + v * screen_y_dir)
+                            .normalize(),
+                    };
+                    buf[x] = to_u8_triple(trace(&primary_ray, &scene));
+                }
+            });
         &self.pixel_buf
     }
 

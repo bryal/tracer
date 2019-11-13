@@ -96,7 +96,7 @@ fn main() {
     }
     // Something is not always dropping correctly, probably an Arc somewhere, so
     // we do this to force exit.
-    println!("\nThank you for playing Wing Commander!");
+    println!("\nThank you for playing Wing Commander!\n");
     std::process::abort();
 }
 
