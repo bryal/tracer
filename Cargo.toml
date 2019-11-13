@@ -9,3 +9,6 @@ luminance = "0.37"
 luminance-derive = "0.5"
 luminance-glfw = "0.11"
 nalgebra-glm = "0.5"
+
+[profile.release]
+debug = true

@@ -1,4 +1,4 @@
-use nalgebra_glm::{vec3, U8Vec3, Vec3};
+use nalgebra_glm::{vec3, Vec3};
 use std::time;
 
 type Pixel = (u8, u8, u8);
@@ -47,6 +47,28 @@ impl Tracer {
             let o = a - c - b;
             (o, 2.0 * (a - b - o), 2.0 * (a - c - o))
         };
+        let scene = [
+            Sphere {
+                centre: vec3(0.0, 0.0, 0.0),
+                radius: 1.0,
+                color: vec3(1.0, 0.0, 0.0),
+            },
+            Sphere {
+                centre: vec3(1.0, 0.0, 5.0),
+                radius: 1.6,
+                color: vec3(0.0, 1.0, 0.0),
+            },
+            Sphere {
+                centre: vec3(3.0, 0.0, 0.0),
+                radius: 1.2,
+                color: vec3(0.0, 0.0, 1.0),
+            },
+            Sphere {
+                centre: vec3(0.0, -101.0, 0.0),
+                radius: 100.0,
+                color: vec3(0.3, 0.3, 0.3),
+            },
+        ];
         for y in 0..h {
             for x in 0..w {
                 let u = x as f32 / w as f32;
@@ -57,7 +79,7 @@ impl Tracer {
                         .normalize(),
                 };
                 self.pixel_buf[y * w + x] =
-                    to_triple(to_u8vec3(trace(primary_ray)));
+                    to_u8_triple(trace(primary_ray, &scene));
             }
         }
         &self.pixel_buf
@@ -73,34 +95,12 @@ impl Tracer {
     }
 }
 
-fn trace(ray: Ray) -> Vec3 {
-    let scene = [
-        Sphere {
-            centre: vec3(0.0, 0.0, 0.0),
-            radius: 1.0,
-            color: vec3(1.0, 0.0, 0.0),
-        },
-        Sphere {
-            centre: vec3(1.0, 0.0, 5.0),
-            radius: 1.6,
-            color: vec3(0.0, 1.0, 0.0),
-        },
-        Sphere {
-            centre: vec3(3.0, 0.0, 0.0),
-            radius: 1.2,
-            color: vec3(0.0, 0.0, 1.0),
-        },
-        Sphere {
-            centre: vec3(0.0, -101.0, 0.0),
-            radius: 100.0,
-            color: vec3(0.3, 0.3, 0.3),
-        },
-    ];
+fn trace(ray: Ray, scene: &[Sphere]) -> Vec3 {
     let hits = scene.iter().flat_map(|obj| obj.intersect(&ray));
     if let Some(hit) =
         hits.min_by(|h1, h2| h1.t.partial_cmp(&h2.t).expect("sorting hits"))
     {
-        let hit_pos = ray.origin + hit.t * ray.dir;
+        // let hit_pos = ray.origin + hit.t * ray.dir;
         let from_sun = vec3(-6.0, -10.0, 4.0).normalize();
         let brightness = hit.normal.dot(&-from_sun).max(0.0);
         hit.color * brightness
@@ -157,11 +157,10 @@ impl Sphere {
     }
 }
 
-fn to_triple<T, V: Into<[T; 3]>>(v: V) -> (T, T, T) {
-    let [x, y, z] = v.into();
-    (x, y, z)
-}
-
-fn to_u8vec3(v: Vec3) -> U8Vec3 {
-    v.map(|x| (x * 255.0) as u8)
+fn to_u8_triple(v: Vec3) -> (u8, u8, u8) {
+    (
+        (v.x * 255.0) as u8,
+        (v.y * 255.0) as u8,
+        (v.z * 255.0) as u8,
+    )
 }
