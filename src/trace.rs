@@ -7,6 +7,8 @@ use crate::intersect::*;
 
 type Pixel = (u8, u8, u8);
 
+const RAY_EPSILON: f32 = 0.0001;
+
 pub const ERR_COLOR_F: (f32, f32, f32) = (1.0, 0.0, 1.0);
 pub const ERR_COLOR: Pixel = (
     (ERR_COLOR_F.0 * 255.0) as u8,
@@ -15,7 +17,7 @@ pub const ERR_COLOR: Pixel = (
 );
 
 fn background_color() -> Vec3 {
-    vec3(0.0, 0.0, 0.0)
+    vec3(0.5, 0.7, 1.0)
 }
 
 pub struct Tracer {
@@ -83,12 +85,23 @@ impl Tracer {
 
 fn trace(ray: &Ray, scene: &[Sphere]) -> Vec3 {
     if let Some(hit) = closest_hit(ray, scene) {
-        // let hit_pos = ray.origin + hit.t * ray.dir;
-        let from_sun = vec3(-6.0, -10.0, 4.0).normalize();
-        let brightness = hit.normal.dot(&-from_sun).max(0.0);
-        hit.color * brightness
+        hit.color * direct_light(ray, &hit, scene)
     } else {
         background_color()
+    }
+}
+
+fn direct_light(ray: &Ray, hit: &Hit, scene: &[Sphere]) -> f32 {
+    let hit_pos = ray.origin + hit.t * ray.dir;
+    let sun = vec3(600.0, 400.0, -400.0);
+    let to_sun = (sun - hit_pos).normalize();
+    let shadow_ray = Ray {
+        origin: hit_pos + RAY_EPSILON * to_sun,
+        dir: to_sun,
+    };
+    match any_hit(&shadow_ray, scene) {
+        Some(_) => 0.0,
+        None => hit.normal.dot(&to_sun).max(0.0),
     }
 }
 
