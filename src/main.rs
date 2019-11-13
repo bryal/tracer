@@ -1,5 +1,6 @@
 mod geom;
 mod intersect;
+mod material;
 mod trace;
 
 use luminance::context::GraphicsContext as _;
@@ -18,7 +19,7 @@ use std::time;
 use geom::*;
 use trace::*;
 
-const SUBSAMPLING: u32 = 8;
+const SUBSAMPLING: u32 = 4;
 
 const VERT_SHADER_SRC: &'static str = include_str!("vert.glsl");
 const FRAG_SHADER_SRC: &'static str = include_str!("frag.glsl");

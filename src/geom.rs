@@ -3,8 +3,9 @@ use noise::{NoiseFn, Perlin};
 use std::time;
 
 use crate::intersect::*;
+use crate::material::*;
 
-const SCENE_SIZE: isize = 20;
+const SCENE_SIZE: isize = 4;
 
 pub type Scene = Vec<Sphere>;
 
@@ -21,8 +22,7 @@ pub fn scene_0(t0: time::Instant) -> Scene {
                 Sphere {
                     centre: vec3(x, y, z),
                     radius: 0.4,
-                    color: vec3(1.0, 0.0, 0.0),
-                    specular: false,
+                    mat: Mat::diffuse(vec3(1.0, 0.0, 0.0)),
                 }
             })
         })
@@ -30,8 +30,7 @@ pub fn scene_0(t0: time::Instant) -> Scene {
     scene.push(Sphere {
         centre: vec3(0.0, -101.0, 0.0),
         radius: 100.0,
-        color: vec3(0.3, 0.3, 0.3),
-        specular: false,
+        mat: Mat::diffuse(vec3(0.3, 0.3, 0.3)),
     });
     scene
 }
@@ -41,50 +40,49 @@ pub fn scene_1(_: time::Instant) -> Scene {
         Sphere {
             centre: vec3(0.0, -101.0, 0.0),
             radius: 100.0,
-            color: vec3(0.3, 0.3, 0.3),
-            specular: false,
+            mat: Mat::diffuse(vec3(0.3, 0.3, 0.3)),
         },
         Sphere {
             centre: vec3(0.0, 2.0, 0.0),
             radius: 3.0,
-            color: vec3(1.0, 0.0, 0.0),
-            specular: true,
+            mat: Mat::mirror(),
         },
         Sphere {
             centre: vec3(3.0, 0.0, 4.0),
             radius: 2.0,
-            color: vec3(0.0, 0.0, 1.0),
-            specular: true,
+            mat: Mat::diffuse(vec3(0.0, 0.0, 1.0)),
         },
         Sphere {
             centre: vec3(-3.0, 1.0, 4.0),
             radius: 1.8,
-            color: vec3(0.0, 1.0, 0.0),
-            specular: false,
+            mat: Mat::diffuse(vec3(0.0, 1.0, 0.0)),
         },
     ]
 }
 
 pub fn closest_hit(ray: &Ray, scene: &[Sphere]) -> Option<Hit> {
+    let basic_ray = BasicRay {
+        origin: ray.origin,
+        dir: ray.dir,
+    };
     scene
         .iter()
-        .flat_map(|obj| obj.intersect(ray))
+        .flat_map(|obj| obj.intersect(&basic_ray))
         .min_by(|h1, h2| h1.t.partial_cmp(&h2.t).expect("sorting hits"))
 }
 
-pub fn any_hit(ray: &Ray, scene: &[Sphere]) -> Option<Hit> {
+pub fn any_hit(ray: &BasicRay, scene: &[Sphere]) -> Option<Hit> {
     scene.iter().flat_map(|obj| obj.intersect(ray)).next()
 }
 
 pub struct Sphere {
     centre: Vec3,
     radius: f32,
-    color: Vec3,
-    specular: bool,
+    mat: Mat,
 }
 
 impl Sphere {
-    pub fn intersect(&self, ray: &Ray) -> Option<Hit> {
+    pub fn intersect(&self, ray: &BasicRay) -> Option<Hit> {
         let oc = ray.origin - self.centre;
         let a = ray.dir.dot(&ray.dir);
         let b = 2.0 * oc.dot(&ray.dir);
@@ -105,10 +103,9 @@ impl Sphere {
             mr.map(|r| {
                 let t = r / (2.0 * a);
                 Hit {
-                    t: t,
+                    t,
                     normal: (oc + t * ray.dir) / self.radius,
-                    color: self.color,
-                    specular: self.specular,
+                    mat: self.mat.clone(),
                 }
             })
         }

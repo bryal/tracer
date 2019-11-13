@@ -1,10 +1,12 @@
 use nalgebra_glm as glm;
 use nalgebra_glm::{vec3, Vec3};
+use rand::prelude::*;
 use rayon::prelude::*;
 use std::time;
 
 use crate::geom::*;
 use crate::intersect::*;
+use crate::material::*;
 
 type Pixel = (u8, u8, u8);
 
@@ -38,9 +40,9 @@ impl Tracer {
     pub fn trace_frame(&mut self, [w, h]: [u32; 2], scene: &Scene) -> &[Pixel] {
         let [w, h] = [w as usize, h as usize];
         self.resize_pixel_buf(w, h);
-        let t = self.t0.elapsed().as_secs_f64() / 20.0;
+        let t = self.t0.elapsed().as_secs_f64() / 8.0;
         let cam_pos = vec3(t.sin() as f32 * 16.0, 4.0, t.cos() as f32 * 16.0);
-        let cam_target = vec3(0.0, 0.0, 0.0);
+        let cam_target = Vec3::zeros();
         let cam_dir = (cam_target - cam_pos).normalize();
         let world_up = Vec3::y();
         let cam_right = cam_dir.cross(&world_up).normalize();
@@ -69,8 +71,13 @@ impl Tracer {
                             + v * screen_y_dir)
                             .normalize(),
                         bounces: MAX_BOUNCES,
+                        throughput: Vec3::repeat(1.0),
+                        rng: &mut SmallRng::seed_from_u64(rand::random()),
                     };
-                    buf[x] = to_u8_triple(trace(&primary_ray, &scene));
+                    buf[x] = to_u8_triple(glm::min(
+                        &trace(primary_ray, &scene),
+                        1.0,
+                    ));
                 }
             });
         &self.pixel_buf
@@ -86,42 +93,65 @@ impl Tracer {
     }
 }
 
-fn trace(ray: &Ray, scene: &[Sphere]) -> Vec3 {
-    if let Some(hit) = closest_hit(ray, scene) {
-        if hit.specular {
-            if ray.bounces > 0 {
-                let hit_pos = ray.origin + hit.t * ray.dir;
-                let dir = glm::reflect_vec(&ray.dir, &hit.normal);
-                let indirect_ray = Ray {
-                    origin: hit_pos + RAY_EPSILON * dir,
-                    dir,
-                    bounces: ray.bounces - 1,
-                };
-                trace(&indirect_ray, scene)
-            } else {
-                vec3(0.0, 0.0, 0.0)
-            }
+fn trace(ray: Ray, scene: &[Sphere]) -> Vec3 {
+    if let Some(hit) = closest_hit(&ray, scene) {
+        let wo = -ray.dir;
+        let hit_pos = ray.origin + hit.t * ray.dir;
+        let radiance = direct_light(&hit, hit_pos, wo, scene);
+        let sample = sample_wi(ray.rng, wo, hit.normal, hit.mat);
+        let cosineterm = sample.wi.dot(&hit.normal).abs();
+        // A probability of 0 means our sampled wi is actually impossible, and
+        // the resulting BRDF won't make sense. Avoid nonsensical computations
+        // (which will result in NaNs) by just setting throughput to 0.
+        let throughput = if sample.pdf != 0.0 {
+            ray.throughput
+                .component_mul(&((sample.brdf * cosineterm) / sample.pdf))
         } else {
-            hit.color * direct_light(ray, &hit, scene)
+            Vec3::zeros()
+        };
+        let mut result = radiance.component_mul(&ray.throughput);
+        if ray.bounces > 0 && glm::comp_max(&throughput) > 0.01 {
+            let indirect_ray = Ray {
+                origin: hit_pos + RAY_EPSILON * sample.wi,
+                dir: sample.wi,
+                bounces: ray.bounces - 1,
+                throughput,
+                ..ray
+            };
+            result += trace(indirect_ray, scene)
         }
+        result
     } else {
-        background_color()
+        background_color().component_mul(&ray.throughput)
     }
 }
 
-fn direct_light(ray: &Ray, hit: &Hit, scene: &[Sphere]) -> f32 {
-    let hit_pos = ray.origin + hit.t * ray.dir;
-    let sun = vec3(600.0, 400.0, -400.0);
-    let to_sun = (sun - hit_pos).normalize();
-    let shadow_ray = Ray {
-        origin: hit_pos + RAY_EPSILON * to_sun,
-        dir: to_sun,
-        bounces: 0,
-    };
-    match any_hit(&shadow_ray, scene) {
-        Some(_) => 0.0,
-        None => hit.normal.dot(&to_sun).max(0.0),
+fn direct_light(hit: &Hit, hit_pos: Vec3, wo: Vec3, scene: &[Sphere]) -> Vec3 {
+    let light_pos = vec3(10.0, 20.0, -10.0);
+    let light_emission = vec3(1.0, 0.95, 0.9) * 1_400.0;
+    let dist = (light_pos - hit_pos).magnitude();
+    let wl = (light_pos - hit_pos).normalize();
+    // If surface and light aren't facing eachother at all, there can't be any
+    // light contribution
+    if hit.normal.dot(&wl) <= 0.0 {
+        return Vec3::zeros();
     }
+    let shadow_ray = BasicRay {
+        origin: hit_pos + RAY_EPSILON * wl,
+        dir: wl,
+    };
+    let in_shadow = any_hit(&shadow_ray, scene).is_some();
+    if in_shadow {
+        return Vec3::zeros();
+    }
+    // convert area based pdf to solid angle
+    let weight = brdf(wl, wo, hit.normal, &hit.mat)
+	// Optimal lighting conditions if the center point of both the light and
+	// surface are exactly facing eachother
+	* hit.normal.dot(&wl)
+	// Falloff. Intensity drops proportionally to the square of the distance
+        / (dist * dist);
+    light_emission.component_mul(&weight)
 }
 
 fn to_u8_triple(v: Vec3) -> (u8, u8, u8) {
