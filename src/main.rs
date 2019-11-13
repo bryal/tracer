@@ -120,7 +120,8 @@ fn trace_texture(
     surface: &mut GlfwSurface,
 ) -> Texture<Flat, Dim2, NormRGB8UI> {
     let [sw, sh] = surface.size();
-    let dims = [sw / 8, sh / 8];
+    let sub = 4;
+    let dims = [sw / sub, sh / sub];
     let pixels = tracer.trace_frame(dims);
     let n_mipmaps = 0;
     let tex = Texture::new(surface, dims, n_mipmaps, Sampler::default())
