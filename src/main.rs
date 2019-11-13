@@ -86,7 +86,7 @@ fn main() {
             resize = false;
         }
         let clear = [ERR_COLOR_F.0, ERR_COLOR_F.1, ERR_COLOR_F.2, 1.0];
-        let scene = build_scene(t0);
+        let scene = scene_1(t0);
         let tex = trace_texture(&mut tracer, &mut surface, &scene);
         surface.pipeline_builder().pipeline(
             &back_buffer,

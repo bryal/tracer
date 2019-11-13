@@ -8,7 +8,7 @@ const SCENE_SIZE: isize = 20;
 
 pub type Scene = Vec<Sphere>;
 
-pub fn build_scene(t0: time::Instant) -> Scene {
+pub fn scene_0(t0: time::Instant) -> Scene {
     let a = t0.elapsed().as_secs_f64() / 1.0;
     let p = Perlin::new();
     let mut scene = (-SCENE_SIZE..SCENE_SIZE)
@@ -22,6 +22,7 @@ pub fn build_scene(t0: time::Instant) -> Scene {
                     centre: vec3(x, y, z),
                     radius: 0.4,
                     color: vec3(1.0, 0.0, 0.0),
+                    specular: false,
                 }
             })
         })
@@ -30,8 +31,38 @@ pub fn build_scene(t0: time::Instant) -> Scene {
         centre: vec3(0.0, -101.0, 0.0),
         radius: 100.0,
         color: vec3(0.3, 0.3, 0.3),
+        specular: false,
     });
     scene
+}
+
+pub fn scene_1(_: time::Instant) -> Scene {
+    vec![
+        Sphere {
+            centre: vec3(0.0, -101.0, 0.0),
+            radius: 100.0,
+            color: vec3(0.3, 0.3, 0.3),
+            specular: false,
+        },
+        Sphere {
+            centre: vec3(0.0, 2.0, 0.0),
+            radius: 3.0,
+            color: vec3(1.0, 0.0, 0.0),
+            specular: true,
+        },
+        Sphere {
+            centre: vec3(3.0, 0.0, 4.0),
+            radius: 2.0,
+            color: vec3(0.0, 0.0, 1.0),
+            specular: true,
+        },
+        Sphere {
+            centre: vec3(-3.0, 1.0, 4.0),
+            radius: 1.8,
+            color: vec3(0.0, 1.0, 0.0),
+            specular: false,
+        },
+    ]
 }
 
 pub fn closest_hit(ray: &Ray, scene: &[Sphere]) -> Option<Hit> {
@@ -49,6 +80,7 @@ pub struct Sphere {
     centre: Vec3,
     radius: f32,
     color: Vec3,
+    specular: bool,
 }
 
 impl Sphere {
@@ -76,6 +108,7 @@ impl Sphere {
                     t: t,
                     normal: (oc + t * ray.dir) / self.radius,
                     color: self.color,
+                    specular: self.specular,
                 }
             })
         }

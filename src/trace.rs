@@ -1,3 +1,4 @@
+use nalgebra_glm as glm;
 use nalgebra_glm::{vec3, Vec3};
 use rayon::prelude::*;
 use std::time;
@@ -8,6 +9,7 @@ use crate::intersect::*;
 type Pixel = (u8, u8, u8);
 
 const RAY_EPSILON: f32 = 0.0001;
+const MAX_BOUNCES: u8 = 3;
 
 pub const ERR_COLOR_F: (f32, f32, f32) = (1.0, 0.0, 1.0);
 pub const ERR_COLOR: Pixel = (
@@ -66,6 +68,7 @@ impl Tracer {
                             + u * screen_x_dir
                             + v * screen_y_dir)
                             .normalize(),
+                        bounces: MAX_BOUNCES,
                     };
                     buf[x] = to_u8_triple(trace(&primary_ray, &scene));
                 }
@@ -85,7 +88,22 @@ impl Tracer {
 
 fn trace(ray: &Ray, scene: &[Sphere]) -> Vec3 {
     if let Some(hit) = closest_hit(ray, scene) {
-        hit.color * direct_light(ray, &hit, scene)
+        if hit.specular {
+            if ray.bounces > 0 {
+                let hit_pos = ray.origin + hit.t * ray.dir;
+                let dir = glm::reflect_vec(&ray.dir, &hit.normal);
+                let indirect_ray = Ray {
+                    origin: hit_pos + RAY_EPSILON * dir,
+                    dir,
+                    bounces: ray.bounces - 1,
+                };
+                trace(&indirect_ray, scene)
+            } else {
+                vec3(0.0, 0.0, 0.0)
+            }
+        } else {
+            hit.color * direct_light(ray, &hit, scene)
+        }
     } else {
         background_color()
     }
@@ -98,6 +116,7 @@ fn direct_light(ray: &Ray, hit: &Hit, scene: &[Sphere]) -> f32 {
     let shadow_ray = Ray {
         origin: hit_pos + RAY_EPSILON * to_sun,
         dir: to_sun,
+        bounces: 0,
     };
     match any_hit(&shadow_ray, scene) {
         Some(_) => 0.0,
