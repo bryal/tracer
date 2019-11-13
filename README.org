@@ -1,6 +1,6 @@
 * Tracer
 
-  Learning about pathtracing with rust and vulkan (via vulkano).
+  Experimentations with pathtracing in rust
 
 ** License
 
