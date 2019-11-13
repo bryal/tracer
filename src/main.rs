@@ -11,6 +11,7 @@ use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::{
     Action, GlfwSurface, Key, Surface, WindowDim, WindowEvent, WindowOpt,
 };
+use std::time;
 
 use trace::*;
 
@@ -60,6 +61,9 @@ fn main() {
     let mut back_buffer = surface.back_buffer().unwrap();
     let mut resize = false;
     let mut tracer = Tracer::new();
+    let mut t = time::Instant::now();
+    let mut tf = 0.0;
+    let mut nf = 0;
     'app: loop {
         for event in surface.poll_events() {
             match event {
@@ -93,6 +97,16 @@ fn main() {
             },
         );
         surface.swap_buffers();
+        let t_prev = t;
+        t = time::Instant::now();
+        let dt = t_prev.elapsed().as_secs_f64();
+        tf += dt;
+        nf += 1;
+        if tf > 1.0 {
+            println!("FPS: {:.3}", nf as f64 / tf);
+            tf = 0.0;
+            nf = 0;
+        }
     }
     // Something is not always dropping correctly, probably an Arc somewhere, so
     // we do this to force exit.
