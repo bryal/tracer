@@ -57,10 +57,13 @@ impl Tracer {
             let o = a - c - b;
             (o, 2.0 * (a - b - o), 2.0 * (a - c - o))
         };
+        let random_seed_p = true;
+        let seed = if random_seed_p { rand::random() } else { 0 };
         self.pixel_buf
             .par_chunks_mut(w)
             .enumerate()
             .for_each(|(y, buf)| {
+                let seed = SmallRng::seed_from_u64(seed + y as u64).next_u64();
                 for x in 0..w {
                     let u = x as f32 / w as f32;
                     let v = y as f32 / h as f32;
@@ -72,7 +75,7 @@ impl Tracer {
                             .normalize(),
                         bounces: MAX_BOUNCES,
                         throughput: Vec3::repeat(1.0),
-                        rng: &mut SmallRng::seed_from_u64(rand::random()),
+                        rng: &mut SmallRng::seed_from_u64(seed + x as u64),
                     };
                     buf[x] = to_u8_triple(glm::min(
                         &trace(primary_ray, &scene),
