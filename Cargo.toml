@@ -12,6 +12,7 @@ nalgebra-glm = "0.5"
 rayon = "1.2"
 noise = "0.6"
 rand = { version = "0.7", features = ["small_rng"] }
+emigui = { git = "https://github.com/emilk/emigui", rev = "be23d66f9ee9028eae26674c39d236fb3772313b"}
 
 [profile.release]
 debug = true

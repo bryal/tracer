@@ -10,6 +10,7 @@ use crate::material::*;
 
 type Pixel = (u8, u8, u8);
 
+pub const SUBSAMPLING: u32 = 4;
 const RAY_EPSILON: f32 = 0.0001;
 const MAX_BOUNCES: u8 = 3;
 
