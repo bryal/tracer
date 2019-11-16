@@ -7,8 +7,9 @@ edition = "2018"
 [dependencies]
 luminance = "0.37"
 luminance-derive = "0.5"
-luminance-glfw = "0.11"
+luminance-glutin = { git = "https://github.com/bryal/luminance-rs" }
 nalgebra-glm = "0.5"
+nalgebra = "0.19"
 rayon = "1.2"
 noise = "0.6"
 rand = { version = "0.7", features = ["small_rng"] }

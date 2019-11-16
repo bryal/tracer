@@ -11,21 +11,25 @@ use {
     luminance::{
         blending, context::GraphicsContext as _, render_state::RenderState,
     },
-    luminance_glfw::{
-        Action, GlfwSurface, Key, Surface, WindowDim, WindowEvent, WindowOpt,
+    luminance_glutin::{
+        CursorMode, ElementState::*, Event, GlutinSurface,
+        KeyboardInput as KeyInp, LogicalPosition, Surface,
+        VirtualKeyCode as Key, WindowDim, WindowEvent, WindowOpt,
     },
+    nalgebra_glm::{vec2, vec3, Vec2, Vec3},
+    std::collections::HashSet,
     std::time,
     trace::*,
 };
 
 fn main() {
     // Surface to render to and get events from.
-    let mut surface = GlfwSurface::new(
+    let mut surface = GlutinSurface::new(
         WindowDim::Windowed(800, 800),
         "Tracer",
-        WindowOpt::default(),
+        WindowOpt::default().set_cursor_mode(CursorMode::Disabled),
     )
-    .expect("GLFW surface creation");
+    .expect("Glutin surface creation");
     let tracer_program = draw::TracerProgram::create();
     let gui_program = draw::GuiProgram::create();
     let render_st = RenderState::default().set_blending((
@@ -34,26 +38,24 @@ fn main() {
         blending::Factor::SrcAlphaComplement,
     ));
     let mut back_buffer = surface.back_buffer().unwrap();
-    let mut resize = false;
     let mut tracer = Tracer::new();
     let mut gui = Gui::new();
     let t0 = time::Instant::now();
+    let mut t_prev = time::Instant::now();
     'app: loop {
-        for event in surface.poll_events() {
-            match event {
-                WindowEvent::Close
-                | WindowEvent::Key(Key::Escape, _, Action::Release, _) => break 'app,
-                WindowEvent::FramebufferSize(..) => {
-                    resize = true;
-                }
-                _ => (),
+        let dt = t_prev.elapsed().as_secs_f32();
+        t_prev = time::Instant::now();
+        let actions = parse_events(&mut surface);
+        if actions.exit {
+            break 'app;
+        }
             }
         }
-        if resize {
+        if actions.resize {
             // Simply ask another backbuffer at the right dimension (no
             // allocation / reallocation).
             back_buffer = surface.back_buffer().unwrap();
-            resize = false;
+        }
         }
         let clear = [ERR_COLOR_F.0, ERR_COLOR_F.1, ERR_COLOR_F.2, 1.0];
         let scene = scene_1(t0);
@@ -75,3 +77,61 @@ fn main() {
     println!("\nThank you for playing Wing Commander!\n");
     std::process::abort();
 }
+
+struct Actions {
+    exit: bool,
+    resize: bool,
+    cursor: Option<Vec2>,
+    presseds: HashSet<Key>,
+    releaseds: HashSet<Key>,
+}
+
+fn parse_events(surface: &mut GlutinSurface) -> Actions {
+    let mut actions = Actions {
+        exit: false,
+        resize: false,
+        cursor: None,
+        presseds: HashSet::new(),
+        releaseds: HashSet::new(),
+    };
+    for event in surface.poll_events() {
+        // println!("event: {:?}", event);
+        match event {
+            Event::WindowEvent { event, .. } => {
+                parse_window_event(event, &mut actions)
+            }
+            _ => (),
+        }
+    }
+    actions
+}
+
+/// Returns whether we should exit
+fn parse_window_event(e: WindowEvent, actions: &mut Actions) {
+    match e {
+        WindowEvent::CloseRequested => actions.exit = true,
+        WindowEvent::KeyboardInput {
+            input:
+                KeyInp {
+                    state,
+                    virtual_keycode: Some(k),
+                    ..
+                },
+            ..
+        } => {
+            if k == Key::Escape {
+                actions.exit = true;
+            } else if state == Pressed {
+                actions.presseds.insert(k);
+            } else {
+                actions.releaseds.insert(k);
+            }
+        }
+        WindowEvent::CursorMoved { position, .. } => {
+            actions.cursor = Some(vec2(position.x as f32, position.y as f32))
+        }
+        WindowEvent::Resized(_) => actions.resize = true,
+        _ => (),
+    }
+}
+

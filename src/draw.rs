@@ -12,7 +12,7 @@ use {
         texture::{self, Dim2, Texture},
     },
     luminance_derive::{Semantics, UniformInterface, Vertex},
-    luminance_glfw::{GlfwSurface, Surface},
+    luminance_glutin::Surface,
 };
 
 const G_VS: &'static str = include_str!("gui-vert.glsl");
@@ -86,13 +86,15 @@ impl GuiProgram {
         )
     }
 
-    pub fn draw<'a, C: 'a>(
+    pub fn draw<'a, C, S>(
         &'a self,
-        surface: &mut GlfwSurface,
+        surface: &mut S,
         gui: &'a mut Gui,
     ) -> impl FnOnce(&Pipeline, &mut ShadingGate<C>, RenderState) + 'a
     where
+        C: 'a,
         C: GraphicsContext,
+        S: Surface,
     {
         gui.update(surface.size());
         let mesh = gui.emigui.paint();
@@ -152,14 +154,16 @@ impl TracerProgram {
         )
     }
 
-    pub fn draw<'a, C: 'a>(
+    pub fn draw<'a, C, S>(
         &'a self,
-        surface: &mut GlfwSurface,
+        surface: &mut S,
         tracer: &mut Tracer,
         scene: &Scene,
     ) -> impl FnOnce(&Pipeline, &mut ShadingGate<C>, RenderState) + 'a
     where
+        C: 'a,
         C: GraphicsContext,
+        S: Surface,
     {
         let tess = fullscreen_quad(surface);
         let [sw, sh] = surface.size();
@@ -187,7 +191,10 @@ impl TracerProgram {
     }
 }
 
-fn fullscreen_quad(surface: &mut GlfwSurface) -> Tess {
+fn fullscreen_quad<S>(surface: &mut S) -> Tess
+where
+    S: Surface,
+{
     let vertices = [
         TVertex::new(TPosition::new([-1.0, -1.0])),
         TVertex::new(TPosition::new([1.0, -1.0])),
