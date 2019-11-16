@@ -2,6 +2,7 @@ use nalgebra_glm as glm;
 use nalgebra_glm::{vec3, Vec3};
 use rand::prelude::*;
 use rayon::prelude::*;
+use std::cmp;
 
 use crate::cam::*;
 use crate::geom::*;
@@ -10,7 +11,6 @@ use crate::material::*;
 
 type Pixel = (u8, u8, u8);
 
-pub const SUBSAMPLING: u32 = 4;
 const RAY_EPSILON: f32 = 0.0001;
 const MAX_BOUNCES: u8 = 3;
 
@@ -27,11 +27,17 @@ fn background_color() -> Vec3 {
 
 pub struct Tracer {
     pixel_buf: Vec<Pixel>,
+    random_seed: bool,
+    subsampling: u8,
 }
 
 impl Tracer {
     pub fn new() -> Self {
-        Tracer { pixel_buf: vec![] }
+        Tracer {
+            pixel_buf: vec![],
+            random_seed: true,
+            subsampling: 4,
+        }
     }
 
     pub fn trace_frame(
@@ -45,8 +51,7 @@ impl Tracer {
         let (screen_origin, screen_x_dir, screen_y_dir) =
             cam.screen_vecs(w as f32, h as f32);
         let cam_pos = cam.pos;
-        let random_seed_p = true;
-        let seed = if random_seed_p { rand::random() } else { 0 };
+        let seed = if self.random_seed { rand::random() } else { 0 };
         self.pixel_buf
             .par_chunks_mut(w)
             .enumerate()
@@ -72,6 +77,22 @@ impl Tracer {
                 }
             });
         &self.pixel_buf
+    }
+
+    pub fn toggle_random_seed(&mut self) {
+        self.random_seed = !self.random_seed;
+    }
+
+    pub fn increase_subsampling_denom(&mut self) {
+        self.subsampling = self.subsampling.saturating_add(1);
+    }
+
+    pub fn decrease_subsampling_denom(&mut self) {
+        self.subsampling = cmp::max(1, self.subsampling - 1)
+    }
+
+    pub fn subsampling(&self) -> u8 {
+        self.subsampling
     }
 
     fn resize_pixel_buf(&mut self, w: usize, h: usize) {

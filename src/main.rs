@@ -74,6 +74,15 @@ fn main() {
         if input_st.pressed(Key::Z) {
             scene_i = (scene_i + 1) % scenes.len();
         }
+        if input_st.pressed(Key::R) {
+            tracer.toggle_random_seed()
+        }
+        if input_st.pressed(Key::Period) {
+            tracer.increase_subsampling_denom()
+        }
+        if input_st.pressed(Key::Comma) {
+            tracer.decrease_subsampling_denom()
+        }
         let move_d = dt * MOVE_SPEED;
         if input_st.held(Key::W) {
             cam.move_forwards(move_d)

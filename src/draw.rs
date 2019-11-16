@@ -169,7 +169,10 @@ impl TracerProgram {
     {
         let tess = fullscreen_quad(surface);
         let [sw, sh] = surface.size();
-        let dims = [sw / SUBSAMPLING, sh / SUBSAMPLING];
+        let dims = [
+            sw / tracer.subsampling() as u32,
+            sh / tracer.subsampling() as u32,
+        ];
         let pixels = tracer.trace_frame(&cam, dims, scene);
         let n_mipmaps = 0;
         let sampler = texture::Sampler {
