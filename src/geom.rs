@@ -5,7 +5,7 @@ use std::time;
 use crate::intersect::*;
 use crate::material::*;
 
-const SCENE_SIZE: isize = 4;
+const SCENE_SIZE: isize = 6;
 
 pub type Scene = Vec<Sphere>;
 
@@ -48,12 +48,12 @@ pub fn scene_1(_: time::Instant) -> Scene {
             mat: Mat::mirror(),
         },
         Sphere {
-            centre: vec3(3.0, 0.0, 4.0),
+            centre: vec3(-3.0, 0.0, 4.0),
             radius: 2.0,
             mat: Mat::diffuse(vec3(0.0, 0.0, 1.0)),
         },
         Sphere {
-            centre: vec3(-3.0, 1.0, 4.0),
+            centre: vec3(3.0, 1.0, 4.0),
             radius: 1.8,
             mat: Mat::diffuse(vec3(0.0, 1.0, 0.0)),
         },

@@ -2,8 +2,8 @@ use nalgebra_glm as glm;
 use nalgebra_glm::{vec3, Vec3};
 use rand::prelude::*;
 use rayon::prelude::*;
-use std::time;
 
+use crate::cam::*;
 use crate::geom::*;
 use crate::intersect::*;
 use crate::material::*;
@@ -26,38 +26,25 @@ fn background_color() -> Vec3 {
 }
 
 pub struct Tracer {
-    t0: time::Instant,
     pixel_buf: Vec<Pixel>,
 }
 
 impl Tracer {
     pub fn new() -> Self {
-        Tracer {
-            t0: time::Instant::now(),
-            pixel_buf: vec![],
-        }
+        Tracer { pixel_buf: vec![] }
     }
 
-    pub fn trace_frame(&mut self, [w, h]: [u32; 2], scene: &Scene) -> &[Pixel] {
+    pub fn trace_frame(
+        &mut self,
+        cam: &Cam,
+        [w, h]: [u32; 2],
+        scene: &Scene,
+    ) -> &[Pixel] {
         let [w, h] = [w as usize, h as usize];
         self.resize_pixel_buf(w, h);
-        let t = self.t0.elapsed().as_secs_f64() / 8.0;
-        let cam_pos = vec3(t.sin() as f32 * 16.0, 4.0, t.cos() as f32 * 16.0);
-        let cam_target = Vec3::zeros();
-        let cam_dir = (cam_target - cam_pos).normalize();
-        let world_up = Vec3::y();
-        let cam_right = cam_dir.cross(&world_up).normalize();
-        let cam_up = cam_right.cross(&cam_dir).normalize();
-        let fov = (45.0f32).to_radians();
-        let aspect_ratio = w as f32 / h as f32;
-        let (screen_origin, screen_x_dir, screen_y_dir) = {
-            let f = fov / 2.0;
-            let a = cam_dir * f.cos();
-            let b = cam_up * f.sin();
-            let c = -cam_right * f.sin() * aspect_ratio;
-            let o = a - c - b;
-            (o, 2.0 * (a - b - o), 2.0 * (a - c - o))
-        };
+        let (screen_origin, screen_x_dir, screen_y_dir) =
+            cam.screen_vecs(w as f32, h as f32);
+        let cam_pos = cam.pos;
         let random_seed_p = true;
         let seed = if random_seed_p { rand::random() } else { 0 };
         self.pixel_buf

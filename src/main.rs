@@ -1,3 +1,4 @@
+mod cam;
 mod draw;
 mod geom;
 mod gui;
@@ -6,6 +7,7 @@ mod material;
 mod trace;
 
 use {
+    cam::*,
     geom::*,
     gui::Gui,
     luminance::{
@@ -21,6 +23,8 @@ use {
     std::time,
     trace::*,
 };
+
+const MOVE_SPEED: f32 = 8.0;
 
 fn main() {
     // Surface to render to and get events from.
@@ -42,6 +46,10 @@ fn main() {
     let mut gui = Gui::new();
     let t0 = time::Instant::now();
     let mut t_prev = time::Instant::now();
+    let scenes = [scene_0, scene_1];
+    let mut scene_i = 1;
+    let mut cam = Cam::new(vec3(0.0, 4.0, 16.0), Vec3::zeros());
+    let mut input_st = InputState::new(&mut surface);
     'app: loop {
         let dt = t_prev.elapsed().as_secs_f32();
         t_prev = time::Instant::now();
@@ -49,18 +57,46 @@ fn main() {
         if actions.exit {
             break 'app;
         }
+        if let Some(pos) = actions.cursor {
+            let dp = input_st.cursor_pos(&mut surface, pos);
+            if dp.magnitude() > 0.001 {
+                cam.mouse_rotate(dp)
             }
         }
         if actions.resize {
             // Simply ask another backbuffer at the right dimension (no
             // allocation / reallocation).
             back_buffer = surface.back_buffer().unwrap();
+            reset_cursor_pos(&mut surface);
         }
+        input_st.press_all(actions.presseds);
+        input_st.release_all(actions.releaseds);
+        if input_st.pressed(Key::Z) {
+            scene_i = (scene_i + 1) % scenes.len();
+        }
+        let move_d = dt * MOVE_SPEED;
+        if input_st.held(Key::W) {
+            cam.move_forwards(move_d)
+        }
+        if input_st.held(Key::S) {
+            cam.move_backwards(move_d)
+        }
+        if input_st.held(Key::D) {
+            cam.move_right(move_d)
+        }
+        if input_st.held(Key::A) {
+            cam.move_left(move_d)
+        }
+        if input_st.held(Key::Space) {
+            cam.move_up(move_d)
+        }
+        if input_st.held(Key::LShift) {
+            cam.move_down(move_d)
         }
         let clear = [ERR_COLOR_F.0, ERR_COLOR_F.1, ERR_COLOR_F.2, 1.0];
-        let scene = scene_1(t0);
+        let scene = scenes[scene_i](t0);
         let tracer_painter =
-            tracer_program.draw(&mut surface, &mut tracer, &scene);
+            tracer_program.draw(&mut surface, &mut tracer, &cam, &scene);
         let gui_painter = gui_program.draw(&mut surface, &mut gui);
         surface.pipeline_builder().pipeline(
             &back_buffer,
@@ -95,7 +131,6 @@ fn parse_events(surface: &mut GlutinSurface) -> Actions {
         releaseds: HashSet::new(),
     };
     for event in surface.poll_events() {
-        // println!("event: {:?}", event);
         match event {
             Event::WindowEvent { event, .. } => {
                 parse_window_event(event, &mut actions)
@@ -135,3 +170,61 @@ fn parse_window_event(e: WindowEvent, actions: &mut Actions) {
     }
 }
 
+struct InputState {
+    pressed_keys: HashSet<Key>,
+    held_keys: HashSet<Key>,
+    released_keys: HashSet<Key>,
+}
+
+impl InputState {
+    fn new(surface: &mut GlutinSurface) -> Self {
+        reset_cursor_pos(surface);
+        Self {
+            pressed_keys: HashSet::new(),
+            held_keys: HashSet::new(),
+            released_keys: HashSet::new(),
+        }
+    }
+
+    fn press_all(&mut self, ks: HashSet<Key>) {
+        self.held_keys.extend(&ks);
+        self.pressed_keys = ks;
+    }
+
+    fn release_all(&mut self, ks: HashSet<Key>) {
+        for k in &ks {
+            self.held_keys.remove(k);
+        }
+        self.released_keys = ks
+    }
+
+    fn pressed(&self, k: Key) -> bool {
+        self.pressed_keys.contains(&k)
+    }
+
+    fn held(&self, k: Key) -> bool {
+        self.held_keys.contains(&k)
+    }
+
+    /// Returns normalized position difference
+    fn cursor_pos(
+        &mut self,
+        surface: &mut GlutinSurface,
+        logical_pos: Vec2,
+    ) -> Vec2 {
+        reset_cursor_pos(surface);
+        let [w, h] = surface.size();
+        let pos_normalized =
+            logical_pos.component_div(&vec2(w as f32, h as f32));
+        let midpoint_normalized = vec2(0.5, 0.5);
+        pos_normalized - midpoint_normalized
+    }
+}
+
+fn reset_cursor_pos(surface: &mut GlutinSurface) {
+    let [w, h] = surface.size();
+    surface.set_cursor_position(LogicalPosition {
+        x: w as f64 / 2.0,
+        y: h as f64 / 2.0,
+    });
+}

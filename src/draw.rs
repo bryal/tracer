@@ -1,4 +1,5 @@
 use {
+    crate::cam::*,
     crate::geom::Scene,
     crate::gui::*,
     crate::trace::*,
@@ -158,6 +159,7 @@ impl TracerProgram {
         &'a self,
         surface: &mut S,
         tracer: &mut Tracer,
+        cam: &Cam,
         scene: &Scene,
     ) -> impl FnOnce(&Pipeline, &mut ShadingGate<C>, RenderState) + 'a
     where
@@ -168,7 +170,7 @@ impl TracerProgram {
         let tess = fullscreen_quad(surface);
         let [sw, sh] = surface.size();
         let dims = [sw / SUBSAMPLING, sh / SUBSAMPLING];
-        let pixels = tracer.trace_frame(dims, scene);
+        let pixels = tracer.trace_frame(&cam, dims, scene);
         let n_mipmaps = 0;
         let sampler = texture::Sampler {
             min_filter: texture::MinFilter::Nearest,
