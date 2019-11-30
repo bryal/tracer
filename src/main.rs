@@ -102,7 +102,7 @@ fn main() {
         if input_st.held(Key::LShift) {
             cam.move_down(move_d)
         }
-        let clear = [ERR_COLOR_F.0, ERR_COLOR_F.1, ERR_COLOR_F.2, 1.0];
+        let clear = [ERR_COLOR.0, ERR_COLOR.1, ERR_COLOR.2, 1.0];
         let scene = scenes[scene_i](t0);
         let tracer_painter =
             tracer_program.draw(&mut surface, &mut tracer, &cam, &scene);

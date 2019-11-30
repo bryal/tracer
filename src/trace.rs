@@ -9,17 +9,12 @@ use crate::geom::*;
 use crate::intersect::*;
 use crate::material::*;
 
-type Pixel = (u8, u8, u8);
+type Pixel = (f32, f32, f32);
 
 const RAY_EPSILON: f32 = 0.0001;
 const MAX_BOUNCES: u8 = 3;
 
-pub const ERR_COLOR_F: (f32, f32, f32) = (1.0, 0.0, 1.0);
-pub const ERR_COLOR: Pixel = (
-    (ERR_COLOR_F.0 * 255.0) as u8,
-    (ERR_COLOR_F.1 * 255.0) as u8,
-    (ERR_COLOR_F.2 * 255.0) as u8,
-);
+pub const ERR_COLOR: (f32, f32, f32) = (1_000_000.0, 0.0, 1_000_000.0);
 
 fn background_color() -> Vec3 {
     vec3(0.5, 0.7, 1.0)
@@ -29,6 +24,7 @@ pub struct Tracer {
     pixel_buf: Vec<Pixel>,
     random_seed: bool,
     subsampling: u8,
+    accum_n: u64,
 }
 
 impl Tracer {
@@ -51,7 +47,12 @@ impl Tracer {
         let (screen_origin, screen_x_dir, screen_y_dir) =
             cam.screen_vecs(w as f32, h as f32);
         let cam_pos = cam.pos;
-        let seed = if self.random_seed { rand::random() } else { 0 };
+        let seed = if self.random_seed {
+            rand::random()
+        } else {
+            self.accum_n
+        };
+        let a = 1.0 / (self.accum_n + 1) as f32;
         self.pixel_buf
             .par_chunks_mut(w)
             .enumerate()
@@ -70,12 +71,14 @@ impl Tracer {
                         throughput: Vec3::repeat(1.0),
                         rng: &mut SmallRng::seed_from_u64(seed + x as u64),
                     };
-                    buf[x] = to_u8_triple(glm::min(
-                        &trace(primary_ray, &scene),
-                        1.0,
-                    ));
+                    let color = trace(primary_ray, &scene);
+                    let old_color = from_triple(buf[x]);
+                    buf[x] = to_triple(glm::lerp(&old_color, &color, a));
                 }
             });
+        if self.accum_n < self.accum_n_max {
+            self.accum_n += 1
+        }
         &self.pixel_buf
     }
 
@@ -166,10 +169,10 @@ fn direct_light(hit: &Hit, hit_pos: Vec3, wo: Vec3, scene: &[Sphere]) -> Vec3 {
     light_emission.component_mul(&weight)
 }
 
-fn to_u8_triple(v: Vec3) -> (u8, u8, u8) {
-    (
-        (v.x * 255.0) as u8,
-        (v.y * 255.0) as u8,
-        (v.z * 255.0) as u8,
-    )
+fn to_triple(v: Vec3) -> (f32, f32, f32) {
+    (v.x, v.y, v.z)
+}
+
+fn from_triple((r, g, b): (f32, f32, f32)) -> Vec3 {
+    vec3(r, g, b)
 }

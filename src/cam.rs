@@ -6,6 +6,7 @@ use {
 const FOV: f32 = 80.0;
 const MOUSE_SENSITIVITY: f32 = 1.8;
 
+#[derive(PartialEq, Clone)]
 pub struct Cam {
     pub pos: Vec3,
     dir: Vec3,

@@ -6,7 +6,7 @@ use {
     luminance::{
         context::GraphicsContext,
         pipeline::{BoundTexture, Pipeline, ShadingGate},
-        pixel::{NormR8UI, NormRGB8UI, NormUnsigned},
+        pixel::{self, NormR8UI, RGB32F},
         render_state::RenderState,
         shader::program::{Program, Uniform},
         tess::{Mode, Tess, TessBuilder},
@@ -48,7 +48,7 @@ struct GShaderInterface {
             'static,
             texture::Flat,
             texture::Dim2,
-            NormUnsigned,
+            pixel::NormUnsigned,
         >,
     >,
 }
@@ -72,7 +72,7 @@ struct TVertex {
 #[derive(UniformInterface)]
 struct TShaderInterface {
     tex: Uniform<
-        &'static BoundTexture<'static, texture::Flat, Dim2, NormUnsigned>,
+        &'static BoundTexture<'static, texture::Flat, Dim2, pixel::Floating>,
     >,
 }
 
@@ -173,7 +173,7 @@ impl TracerProgram {
             sw / tracer.subsampling() as u32,
             sh / tracer.subsampling() as u32,
         ];
-        let pixels = tracer.trace_frame(&cam, dims, scene);
+        let pixels = tracer.trace_frame(cam, dims, scene);
         let n_mipmaps = 0;
         let sampler = texture::Sampler {
             min_filter: texture::MinFilter::Nearest,
@@ -181,7 +181,7 @@ impl TracerProgram {
             ..Default::default()
         };
         let tex =
-            Texture::<_, _, NormRGB8UI>::new(surface, dims, n_mipmaps, sampler)
+            Texture::<_, _, RGB32F>::new(surface, dims, n_mipmaps, sampler)
                 .expect("luminance texture creation");
         tex.upload(texture::GenMipmaps::No, pixels).unwrap();
         move |pipeline, s_gate, render_st| {
