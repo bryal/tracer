@@ -24,7 +24,11 @@ pub struct Tracer {
     pixel_buf: Vec<Pixel>,
     random_seed: bool,
     subsampling: u8,
+    accum_n_max: u64,
     accum_n: u64,
+    reset_on_move: bool,
+    dims: [u32; 2],
+    prev_cam: Cam,
 }
 
 impl Tracer {
@@ -33,17 +37,30 @@ impl Tracer {
             pixel_buf: vec![],
             random_seed: true,
             subsampling: 4,
+            accum_n_max: 0,
+            accum_n: 0,
+            reset_on_move: false,
+            dims: [0, 0],
+            prev_cam: Cam::new(Vec3::zeros(), Vec3::zeros()),
         }
     }
 
     pub fn trace_frame(
         &mut self,
         cam: &Cam,
-        [w, h]: [u32; 2],
+        dims: [u32; 2],
         scene: &Scene,
     ) -> &[Pixel] {
-        let [w, h] = [w as usize, h as usize];
-        self.resize_pixel_buf(w, h);
+        if self.accum_n_max == 0
+            || (self.reset_on_move && cam != &self.prev_cam)
+        {
+            self.reset_accum()
+        }
+        self.prev_cam = cam.clone();
+        if dims != self.dims {
+            self.resize_pixel_buf(dims)
+        }
+        let [w, h] = [dims[0] as usize, dims[1] as usize];
         let (screen_origin, screen_x_dir, screen_y_dir) =
             cam.screen_vecs(w as f32, h as f32);
         let cam_pos = cam.pos;
@@ -84,27 +101,60 @@ impl Tracer {
 
     pub fn toggle_random_seed(&mut self) {
         self.random_seed = !self.random_seed;
+        self.reset_accum()
+    }
+
+    pub fn toggle_reset_on_move(&mut self) {
+        self.reset_on_move = !self.reset_on_move;
+        self.reset_accum()
+    }
+
+    pub fn toggle_accum(&mut self) {
+        self.accum_n_max = if self.accum_n_max == 0 {
+            std::u64::MAX
+        } else {
+            0
+        };
+        self.reset_accum()
+    }
+
+    pub fn decrease_accum_n_max(&mut self) {
+        self.accum_n_max = self.accum_n_max.saturating_sub(1);
+        self.reset_accum()
+    }
+
+    pub fn increase_accum_n_max(&mut self) {
+        self.accum_n_max = self.accum_n_max.saturating_add(1);
+        self.reset_accum()
+    }
+
+    pub fn decrease_subsampling_denom(&mut self) {
+        self.subsampling = cmp::max(1, self.subsampling - 1);
+        self.reset_accum()
     }
 
     pub fn increase_subsampling_denom(&mut self) {
         self.subsampling = self.subsampling.saturating_add(1);
+        self.reset_accum()
     }
 
-    pub fn decrease_subsampling_denom(&mut self) {
-        self.subsampling = cmp::max(1, self.subsampling - 1)
+    pub fn reset_accum(&mut self) {
+        self.accum_n = 0;
     }
 
     pub fn subsampling(&self) -> u8 {
         self.subsampling
     }
 
-    fn resize_pixel_buf(&mut self, w: usize, h: usize) {
-        let n = w as usize * h as usize;
-        // Instead of just `resize`ing, reserve an exact capacity first, to make
-        // sure we don't allocate unnecessary space.
+    fn resize_pixel_buf(&mut self, dims: [u32; 2]) {
+        let n = dims[0] as usize * dims[1] as usize;
+        // Instead of just `resize`ing, reserve an exact capacity first, to
+        // make sure we don't allocate unnecessary space.
         let n_additional = n.saturating_sub(self.pixel_buf.len());
         self.pixel_buf.reserve_exact(n_additional);
         self.pixel_buf.resize(n, ERR_COLOR);
+        self.dims = dims;
+        self.reset_accum()
     }
 }
 

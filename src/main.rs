@@ -73,16 +73,23 @@ fn main() {
         input_st.release_all(actions.releaseds);
         if input_st.pressed(Key::Z) {
             scene_i = (scene_i + 1) % scenes.len();
-        }
-        if input_st.pressed(Key::R) {
+            tracer.reset_accum();
+        } else if input_st.pressed(Key::R) {
             tracer.toggle_random_seed()
-        }
-        if input_st.pressed(Key::Period) {
+        } else if input_st.pressed(Key::M) {
+            tracer.toggle_reset_on_move()
+        } else if input_st.pressed(Key::T) {
+            tracer.toggle_accum()
+        } else if input_st.pressed(Key::LBracket) {
+            tracer.decrease_accum_n_max()
+        } else if input_st.pressed(Key::RBracket) {
+            tracer.increase_accum_n_max()
+        } else if input_st.pressed(Key::Comma) {
+            tracer.decrease_subsampling_denom()
+        } else if input_st.pressed(Key::Period) {
             tracer.increase_subsampling_denom()
         }
-        if input_st.pressed(Key::Comma) {
-            tracer.decrease_subsampling_denom()
-        }
+
         let move_d = dt * MOVE_SPEED;
         if input_st.held(Key::W) {
             cam.move_forwards(move_d)

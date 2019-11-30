@@ -14,7 +14,7 @@ impl Mat {
     pub fn mirror() -> Self {
         Self {
             color: Vec3::repeat(0.0),
-            fresnel: vec3(1.0, 1.0, 1.0),
+            fresnel: Vec3::repeat(1.0),
             shininess: 2048.0,
         }
     }
