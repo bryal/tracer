@@ -10,6 +10,62 @@ const SCENE_SIZE: isize = 6;
 pub type Scene = Vec<Sphere>;
 
 pub fn scene_0(t0: time::Instant) -> Scene {
+    let a = t0.elapsed().as_secs_f64() * 10.0;
+
+    vec![
+        Sphere {
+            centre: vec3(0.0, -201.0, 0.0),
+            radius: 200.0,
+            mat: Mat::diffuse(vec3(0.0, 1.0, 0.0)),
+        },
+        Sphere {
+            centre: vec3(a.sin() as f32 * 12.0, 0.5, a.cos() as f32 * 12.0),
+            radius: 2.0,
+            mat: Mat::diffuse(vec3(0.0, 0.0, 1.0)),
+        },
+    ]
+}
+
+pub fn scene_1(_: time::Instant) -> Scene {
+    vec![
+        Sphere {
+            centre: vec3(0.0, -101.0, 0.0),
+            radius: 100.0,
+            mat: Mat::diffuse(vec3(0.3, 0.3, 0.3)),
+        },
+        Sphere {
+            centre: vec3(0.0, 2.0, 0.0),
+            radius: 3.0,
+            mat: Mat::mirror(),
+        },
+        Sphere {
+            centre: vec3(8.0, 3.0, 8.0),
+            radius: 4.0,
+            mat: Mat {
+                color: Vec3::zeros(),
+                fresnel: Vec3::repeat(1.0),
+                shininess: 1024.0,
+            },
+        },
+        Sphere {
+            centre: vec3(-3.0, 0.0, 4.0),
+            radius: 2.0,
+            mat: Mat::diffuse(vec3(0.0, 0.0, 1.0)),
+        },
+        Sphere {
+            centre: vec3(3.0, 1.0, 4.0),
+            radius: 1.8,
+            mat: Mat::diffuse(vec3(0.0, 1.0, 0.0)),
+        },
+        Sphere {
+            centre: vec3(-5.0, 6.0, -4.0),
+            radius: 2.0,
+            mat: Mat::diffuse(vec3(1.0, 0.0, 0.0)),
+        },
+    ]
+}
+
+pub fn scene_2(t0: time::Instant) -> Scene {
     let a = t0.elapsed().as_secs_f64() / 1.0;
     let p = Perlin::new();
     let mut scene = (-SCENE_SIZE..SCENE_SIZE)
@@ -33,31 +89,6 @@ pub fn scene_0(t0: time::Instant) -> Scene {
         mat: Mat::diffuse(vec3(0.3, 0.3, 0.3)),
     });
     scene
-}
-
-pub fn scene_1(_: time::Instant) -> Scene {
-    vec![
-        Sphere {
-            centre: vec3(0.0, -101.0, 0.0),
-            radius: 100.0,
-            mat: Mat::diffuse(vec3(0.3, 0.3, 0.3)),
-        },
-        Sphere {
-            centre: vec3(0.0, 2.0, 0.0),
-            radius: 3.0,
-            mat: Mat::mirror(),
-        },
-        Sphere {
-            centre: vec3(-3.0, 0.0, 4.0),
-            radius: 2.0,
-            mat: Mat::diffuse(vec3(0.0, 0.0, 1.0)),
-        },
-        Sphere {
-            centre: vec3(3.0, 1.0, 4.0),
-            radius: 1.8,
-            mat: Mat::diffuse(vec3(0.0, 1.0, 0.0)),
-        },
-    ]
 }
 
 pub fn closest_hit(ray: &Ray, scene: &[Sphere]) -> Option<Hit> {

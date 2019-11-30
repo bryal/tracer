@@ -46,8 +46,8 @@ fn main() {
     let mut gui = Gui::new();
     let t0 = time::Instant::now();
     let mut t_prev = time::Instant::now();
-    let scenes = [scene_0, scene_1];
-    let mut scene_i = 1;
+    let scenes = [scene_0, scene_1, scene_2];
+    let mut scene_i = 0;
     let mut cam = Cam::new(vec3(0.0, 4.0, 16.0), Vec3::zeros());
     let mut input_st = InputState::new(&mut surface);
     'app: loop {
