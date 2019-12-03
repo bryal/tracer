@@ -60,7 +60,7 @@ impl Tracer {
         if dims != self.dims {
             self.resize_pixel_buf(dims)
         }
-        let [w, h] = [dims[0] as usize, dims[1] as usize];
+        let [w, h] = [dims[0] as u64, dims[1] as u64];
         let (screen_origin, screen_x_dir, screen_y_dir) =
             cam.screen_vecs(w as f32, h as f32);
         let cam_pos = cam.pos;
@@ -71,27 +71,23 @@ impl Tracer {
         };
         let a = 1.0 / (self.accum_n + 1) as f32;
         self.pixel_buf
-            .par_chunks_mut(w)
+            .par_iter_mut()
             .enumerate()
-            .for_each(|(y, buf)| {
-                let seed = SmallRng::seed_from_u64(seed + y as u64).next_u64();
-                for x in 0..w {
-                    let u = x as f32 / w as f32;
-                    let v = y as f32 / h as f32;
-                    let primary_ray = Ray {
-                        origin: cam_pos,
-                        dir: (screen_origin
-                            + u * screen_x_dir
-                            + v * screen_y_dir)
-                            .normalize(),
-                        bounces: MAX_BOUNCES,
-                        throughput: Vec3::repeat(1.0),
-                        rng: &mut SmallRng::seed_from_u64(seed + x as u64),
-                    };
-                    let color = trace(primary_ray, &scene);
-                    let old_color = from_triple(buf[x]);
-                    buf[x] = to_triple(glm::lerp(&old_color, &color, a));
-                }
+            .for_each(|(n, pixel)| {
+                let n = n as u64;
+                let (x, y) = (n % w, n / w);
+                let (u, v) = (x as f32 / w as f32, y as f32 / h as f32);
+                let primary_ray = Ray {
+                    origin: cam_pos,
+                    dir: (screen_origin + u * screen_x_dir + v * screen_y_dir)
+                        .normalize(),
+                    bounces: MAX_BOUNCES,
+                    throughput: Vec3::repeat(1.0),
+                    rng: &mut SmallRng::seed_from_u64(seed + x * y),
+                };
+                let color = trace(primary_ray, &scene);
+                let old_color = from_triple(*pixel);
+                *pixel = to_triple(glm::lerp(&old_color, &color, a));
             });
         if self.accum_n < self.accum_n_max {
             self.accum_n += 1
