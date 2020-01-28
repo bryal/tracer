@@ -9,31 +9,31 @@ mod trace;
 use {
     cam::*,
     geom::*,
+    glutin::{
+        dpi::LogicalPosition, ElementState::*, Event, KeyboardInput as KeyInp,
+        VirtualKeyCode as Key, WindowEvent,
+    },
     gui::Gui,
     luminance::{
-        blending, context::GraphicsContext as _, render_state::RenderState,
+        blending, context::GraphicsContext as _, pipeline::PipelineState,
+        render_state::RenderState,
     },
-    luminance_glutin::{
-        CursorMode, ElementState::*, Event, GlutinSurface,
-        KeyboardInput as KeyInp, LogicalPosition, Surface,
-        VirtualKeyCode as Key, WindowDim, WindowEvent, WindowOpt,
-    },
+    luminance_glutin::{GlutinSurface, WindowDim, WindowOpt},
     nalgebra_glm::{vec2, vec3, Vec2, Vec3},
-    std::collections::HashSet,
-    std::time,
+    std::{collections::HashSet, time},
     trace::*,
 };
 
 const MOVE_SPEED: f32 = 8.0;
 
 fn main() {
-    // Surface to render to and get events from.
     let mut surface = GlutinSurface::new(
         WindowDim::Windowed(800, 800),
         "Tracer",
-        WindowOpt::default().set_cursor_mode(CursorMode::Disabled),
+        WindowOpt::default(),
     )
     .expect("Glutin surface creation");
+    surface.ctx.window().hide_cursor(true);
     let tracer_program = draw::TracerProgram::create();
     let gui_program = draw::GuiProgram::create();
     let render_st = RenderState::default().set_blending((
@@ -109,17 +109,22 @@ fn main() {
         if input_st.held(Key::LShift) {
             cam.move_down(move_d)
         }
-        let clear = [ERR_COLOR.0, ERR_COLOR.1, ERR_COLOR.2, 1.0];
+        let clear = PipelineState::new().set_clear_color([
+            ERR_COLOR.0,
+            ERR_COLOR.1,
+            ERR_COLOR.2,
+            1.0,
+        ]);
         let scene = scenes[scene_i](t0);
         let tracer_painter =
             tracer_program.draw(&mut surface, &mut tracer, &cam, &scene);
         let gui_painter = gui_program.draw(&mut surface, &mut gui);
         surface.pipeline_builder().pipeline(
             &back_buffer,
-            clear,
+            &clear,
             |pipeline, mut s_gate| {
-                tracer_painter(&pipeline, &mut s_gate, render_st);
-                gui_painter(&pipeline, &mut s_gate, render_st);
+                tracer_painter(&pipeline, &mut s_gate, render_st.clone());
+                gui_painter(&pipeline, &mut s_gate, render_st.clone());
             },
         );
         surface.swap_buffers();
@@ -146,14 +151,12 @@ fn parse_events(surface: &mut GlutinSurface) -> Actions {
         presseds: HashSet::new(),
         releaseds: HashSet::new(),
     };
-    for event in surface.poll_events() {
-        match event {
-            Event::WindowEvent { event, .. } => {
-                parse_window_event(event, &mut actions)
-            }
-            _ => (),
+    surface.event_loop.poll_events(|event| match event {
+        Event::WindowEvent { event, .. } => {
+            parse_window_event(event, &mut actions)
         }
-    }
+        _ => (),
+    });
     actions
 }
 
@@ -239,8 +242,12 @@ impl InputState {
 
 fn reset_cursor_pos(surface: &mut GlutinSurface) {
     let [w, h] = surface.size();
-    surface.set_cursor_position(LogicalPosition {
-        x: w as f64 / 2.0,
-        y: h as f64 / 2.0,
-    });
+    surface
+        .ctx
+        .window()
+        .set_cursor_position(LogicalPosition {
+            x: w as f64 / 2.0,
+            y: h as f64 / 2.0,
+        })
+        .unwrap();
 }

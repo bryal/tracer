@@ -13,7 +13,7 @@ use {
         texture::{self, Dim2, Texture},
     },
     luminance_derive::{Semantics, UniformInterface, Vertex},
-    luminance_glutin::Surface,
+    luminance_glutin::GlutinSurface,
 };
 
 const G_VS: &'static str = include_str!("gui-vert.glsl");
@@ -87,15 +87,11 @@ impl GuiProgram {
         )
     }
 
-    pub fn draw<'a, C, S>(
+    pub fn draw<'a>(
         &'a self,
-        surface: &mut S,
+        surface: &mut GlutinSurface,
         gui: &'a mut Gui,
-    ) -> impl FnOnce(&Pipeline, &mut ShadingGate<C>, RenderState) + 'a
-    where
-        C: 'a,
-        C: GraphicsContext,
-        S: Surface,
+    ) -> impl FnOnce(&Pipeline, &mut ShadingGate<GlutinSurface>, RenderState) + 'a
     {
         gui.update(surface.size());
         let mesh = gui.emigui.paint();
@@ -136,7 +132,7 @@ impl GuiProgram {
                 iface.u_screen_size.update(gui.dims);
                 iface.u_tex_size.update([tex_w as f32, tex_h as f32]);
                 iface.u_sampler.update(&bound_tex);
-                r_gate.render(render_st, |mut t_gate| {
+                r_gate.render(&render_st, |mut t_gate| {
                     t_gate.render(&tess);
                 });
             })
@@ -155,17 +151,13 @@ impl TracerProgram {
         )
     }
 
-    pub fn draw<'a, C, S>(
+    pub fn draw<'a>(
         &'a self,
-        surface: &mut S,
+        surface: &mut GlutinSurface,
         tracer: &mut Tracer,
         cam: &Cam,
         scene: &Scene,
-    ) -> impl FnOnce(&Pipeline, &mut ShadingGate<C>, RenderState) + 'a
-    where
-        C: 'a,
-        C: GraphicsContext,
-        S: Surface,
+    ) -> impl FnOnce(&Pipeline, &mut ShadingGate<GlutinSurface>, RenderState) + 'a
     {
         let tess = fullscreen_quad(surface);
         let [sw, sh] = surface.size();
@@ -188,7 +180,7 @@ impl TracerProgram {
             let bound_tex = pipeline.bind_texture(&tex);
             s_gate.shade(&self.0, |iface, mut r_gate| {
                 iface.tex.update(&bound_tex);
-                r_gate.render(render_st, |mut t_gate| {
+                r_gate.render(&render_st, |mut t_gate| {
                     t_gate.render(&tess);
                 });
             });
@@ -198,7 +190,7 @@ impl TracerProgram {
 
 fn fullscreen_quad<S>(surface: &mut S) -> Tess
 where
-    S: Surface,
+    S: GraphicsContext,
 {
     let vertices = [
         TVertex::new(TPosition::new([-1.0, -1.0])),

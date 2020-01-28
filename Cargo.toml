@@ -5,9 +5,10 @@ authors = ["Johan Johansson <96.bryal@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-luminance = "0.37"
+luminance = "0.38"
 luminance-derive = "0.5"
-luminance-glutin = { git = "https://github.com/bryal/luminance-rs" }
+luminance-glutin = "0.8.2"
+glutin = "0.21"
 nalgebra-glm = "0.5"
 nalgebra = "0.19"
 rayon = "1.2"

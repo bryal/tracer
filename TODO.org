@@ -38,3 +38,12 @@ http://vulkano.rs/
    Only consider diffuse color to start with
 * INACTIVE Real-time pathtracing
    Reprojection? Consider other hacks for making it all faster.
+* TODO Use crate ~ultraviolet~ instead of ~nalgebra-glm~?
+  Smaller and more specialized to graphics and games. Faster build
+  time and better error messages could make it much more appropriate
+  than the very big ~nalgebra~.
+* NEXT Radial view frustum / Sphere/cylinder projection
+  Don't remember exactly why I wanted this, but I figure it could be
+  cool. Less/different distortion at the edges when the FOV is high. Fisheye?
+
+  https://forum.unity.com/threads/would-it-be-possible-to-have-a-curved-radial-based-camera-frustum.426460/
