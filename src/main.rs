@@ -18,7 +18,7 @@ use {
         blending, context::GraphicsContext as _, pipeline::PipelineState,
         render_state::RenderState,
     },
-    luminance_glutin::{GlutinSurface, WindowDim, WindowOpt},
+    luminance_glutin::GlutinSurface,
     nalgebra_glm::{vec2, vec3, Vec2, Vec3},
     std::{collections::HashSet, time},
     trace::*,
@@ -27,12 +27,9 @@ use {
 const MOVE_SPEED: f32 = 8.0;
 
 fn main() {
-    let mut surface = GlutinSurface::new(
-        WindowDim::Windowed(800, 800),
-        "Tracer",
-        WindowOpt::default(),
-    )
-    .expect("Glutin surface creation");
+    let mut surface =
+        GlutinSurface::from_builders(|wb| wb.with_title("Tracer"), |cb| cb)
+            .expect("Glutin surface creation");
     surface.ctx.window().hide_cursor(true);
     let tracer_program = draw::TracerProgram::create();
     let gui_program = draw::GuiProgram::create();
