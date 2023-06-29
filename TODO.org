@@ -6,6 +6,7 @@ gpu pathtracer.
 
 https://www.fasterthan.life/blog/2017/7/11/i-am-graphics-and-so-can-you-part-2-intuition
 http://vulkano.rs/
+https://google.github.io/filament/Filament.html#about
 
 * DONE Render a triangle
 * NEXT Naïve raytracer
@@ -47,3 +48,18 @@ http://vulkano.rs/
   cool. Less/different distortion at the edges when the FOV is high. Fisheye?
 
   https://forum.unity.com/threads/would-it-be-possible-to-have-a-curved-radial-based-camera-frustum.426460/
+
+* INACTIVE Radiance Caching
+  https://youtu.be/2GYXuM10riw
+
+  Trace at lower resolution to afford more rays.
+
+  Don't cache outgoing radiance to eye, but incoming radiance to the
+  surface point hit by the eye-ray.
+
+  When upscaling, look at which surface a pixel is pointing towards
+  using g-buffer(?). Lookup the approximate irradiance of that point
+  usint the radiance cache. Calculate the outgoing radiance based on
+  the surface normal, as seen in the g-buffer.
+
+  That's the gist of it, as I understand.
